@@ -37,6 +37,9 @@ with st.sidebar:
     run = st.button("Run Research", type="primary", use_container_width=True)
 
 if run or "result" not in st.session_state:
+    if not ticker:
+        st.error("Enter a ticker symbol.")
+        st.stop()
     if start >= end:
         st.error("Start date must be earlier than end date.")
         st.stop()
@@ -60,6 +63,10 @@ if run or "result" not in st.session_state:
         st.session_state.result = result
         st.session_state.ticker = ticker
         st.session_state.config = {
+            "start": str(start),
+            "end": str(end),
+            "commission_bps": fee,
+            "slippage_bps": slippage,
             "fast": fast,
             "slow": slow,
             "z_window": z_window,
@@ -73,6 +80,7 @@ if run or "result" not in st.session_state:
 
 result = st.session_state.result
 m = metrics(result["strategy_return"], result["equity"])
+config = st.session_state.config
 
 st.subheader(f"Research Results — {st.session_state.ticker}")
 
@@ -115,11 +123,6 @@ with st.expander("Full risk report"):
     st.dataframe(report, use_container_width=True, hide_index=True)
 
 with st.expander("Research assumptions"):
-    st.json({
-        "ticker": st.session_state.ticker,
-        "execution_cost_bps": fee,
-        "slippage_bps": slippage,
-        **st.session_state.config,
-    })
+    st.json({"ticker": st.session_state.ticker, **config})
 
 st.caption("Research use only. Historical backtests do not guarantee future performance.")
