@@ -1,0 +1,1 @@
+"""QuantEdge quantitative research engine."""
