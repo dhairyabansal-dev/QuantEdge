@@ -19,12 +19,12 @@ def make_signals(
     close = prices["Close"].astype(float)
     fast_return = close.pct_change(fast)
     slow_return = close.pct_change(slow)
-    momentum = fast_return > slow_return
+    momentum = (fast_return > slow_return).fillna(False)
 
     rolling_mean = close.rolling(z_window, min_periods=z_window).mean()
     rolling_std = close.rolling(z_window, min_periods=z_window).std(ddof=1)
     zscore = (close - rolling_mean) / rolling_std.replace(0, pd.NA)
-    mean_reversion = zscore < z_entry
+    mean_reversion = zscore.lt(z_entry).fillna(False)
 
     signal = (momentum | mean_reversion).astype(float)
 
