@@ -36,8 +36,12 @@ def cvar_historical(returns: pd.Series, alpha: float = 0.95) -> float:
         return 0.0
 
     var = var_historical(returns, alpha)
+    if var == 0.0:
+        losses = returns[returns < 0]
+        return float(-losses.mean()) if not losses.empty else 0.0
+
     tail = returns[returns <= -var]
-    return float(max(0.0, -tail.mean())) if not tail.empty else var
+    return float(-tail.mean()) if not tail.empty else var
 
 
 def metrics(returns: pd.Series, equity: pd.Series) -> dict[str, float]:
@@ -51,8 +55,13 @@ def metrics(returns: pd.Series, equity: pd.Series) -> dict[str, float]:
     volatility = returns.std(ddof=1)
     sharpe = np.sqrt(TRADING_DAYS) * mean_return / volatility if volatility > 0 else 0.0
 
-    downside = returns.where(returns < 0, 0.0).std(ddof=1)
-    sortino = np.sqrt(TRADING_DAYS) * mean_return / downside if downside > 0 else 0.0
+    negative_returns = returns.clip(upper=0.0)
+    downside_deviation = np.sqrt(np.mean(negative_returns**2))
+    sortino = (
+        np.sqrt(TRADING_DAYS) * mean_return / downside_deviation
+        if downside_deviation > 0
+        else 0.0
+    )
 
     mdd = max_drawdown(equity)
     years = max(len(returns) / TRADING_DAYS, 1 / TRADING_DAYS)
